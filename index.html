@@ -1,1 +1,351 @@
-Asd
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Localização Atual + Endereço</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+    /* Reset de estilos básicos */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f4f7fb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+
+    /* Estilo do Mapa */
+    #map {
+      height: 400px;
+      width: 100%;
+      margin-bottom: 20px;
+      border-radius: 10px;
+    }
+
+    /* Estilo do Formulário */
+    .form-container {
+      background: #fff;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+      font-size: 16px;
+      color: #34495e;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      background-color: #fafafa;
+      transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3498db;
+      background-color: #e6f3ff;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #3498db;
+      color: white;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    button:disabled {
+      background-color: #BDC3C7;
+      cursor: not-allowed;
+    }
+
+    /* Estilo para inputs desabilitados */
+    input:disabled {
+      background-color: #ddd;
+      cursor: not-allowed;
+    }
+
+    /* Alerta e mensagens */
+    .alert {
+      background-color: #e74c3c;
+      color: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .success {
+      background-color: #2ecc71;
+    }
+
+    /* Efeito de texto piscando */
+    .blink {
+      animation: blink-animation 1s steps(5, start) infinite;
+      color: #e74c3c;
+      font-weight: bold;
+    }
+
+    @keyframes blink-animation {
+      50% {
+        opacity: 0;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <h2>Confirme seu endereço e local (Ajuste o pino em azul)</h2>
+
+  <!-- Mapa -->
+  <div id="map">Carregando mapa...</div>
+
+  <!-- Texto piscando -->
+  <p class="blink">Ajuste o pino em azul para confirmar sua localização</p>
+
+  <!-- Formulário -->
+  <div class="form-container">
+    <label for="fullName">Nome e Sobrenome:</label>
+    <input type="text" id="fullName" placeholder="Nome e sobrenome" />
+
+    <label for="street">Nome da rua, quadra ou nome da empresa:</label>
+    <input type="text" id="street" placeholder="Nome da rua, quadra ou nome da empresa" />
+
+    <label for="houseNumber">Número do imóvel:</label>
+    <input type="text" id="houseNumber" placeholder="Número do imóvel" />
+
+    <label for="neighborhood">Selecione o Bairro:</label>
+    <input type="text" id="neighborhood" placeholder="Digite ou selecione um bairro" oninput="filterNeighborhoods()">
+    <ul id="neighborhood-list" style="display:none; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; padding: 0;"></ul>
+
+    <label for="phone">Telefone com DDD:</label>
+    <input type="text" id="phone" placeholder="Telefone com DDD (opcional)" />
+
+    <!-- Campo oculto para cidade -->
+    <input type="hidden" id="city" name="city">
+
+    <button onclick="sendData()">Enviar informações à loja</button>
+
+    <!-- Mensagens de status -->
+    <div id="alert" class="alert"></div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    let selectedLatLng = null;
+    let marker = null;
+    let map = null;
+    const neighborhoods = [
+      "Centro - Teresina", "Dirceu Arcoverde - Teresina", "Ininga - Teresina", "Parque Piauí - Teresina", 
+      "Ilha do Corvo - Teresina", "São Cristóvão - Teresina", "Mocambinho - Teresina", 
+      "Nossa Senhora de Fátima - Teresina", "Aeroporto - Teresina", "Pedra Mole - Teresina",
+      "Parque Piauí - Timon", "Vila da Paz - Timon", "Centro - Timon", "São José - Timon", 
+      "Cidade Nova - Timon", "Parque Alvorada - Timon", "Bairro São João - Timon", "Formosa - Timon", 
+      "Cohab - Timon", "Jardim São Francisco - Timon"
+    ];
+
+    // Função para pegar o valor do parâmetro de telefone via GET
+    function getPhoneFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('telefone') || null;  // Retorna null caso não haja o parâmetro
+    }
+
+    // Função para pegar o valor do parâmetro de nome e sobrenome via GET
+    function getFullNameFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('nome') || null;  // Retorna null caso não haja o parâmetro
+    }
+
+    // Função para preencher o formulário com base na geolocalização
+    function fillAddressFromLatLng(lat, lng) {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&lang=pt-br`;
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          const address = data.address;
+          
+          // Preencher os campos com os dados obtidos
+          if (address.road) {
+            document.getElementById('street').value = address.road || '';
+          }
+          if (address.suburb) {
+            document.getElementById('neighborhood').value = address.suburb || '';
+          }
+          if (address.house_number) {
+            document.getElementById('houseNumber').value = address.house_number || '';
+          }
+          if (address.city) {
+            document.getElementById('city').value = address.city || '';  // Preencher a cidade no campo oculto
+          }
+        })
+        .catch(error => console.error('Erro ao preencher o endereço: ', error));
+    }
+
+    // Inicializa o mapa
+    function initMap(lat, lng) {
+      map = L.map('map').setView([lat, lng], 16);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      selectedLatLng = marker.getLatLng();
+
+      // Preencher o endereço baseado na localização
+      fillAddressFromLatLng(lat, lng);
+
+      marker.on('dragend', function (e) {
+        selectedLatLng = e.target.getLatLng();
+        fillAddressFromLatLng(selectedLatLng.lat, selectedLatLng.lng);
+      });
+    }
+
+    // Obtém a localização atual do dispositivo
+    function getCurrentLocation() {
+      if (!navigator.geolocation) {
+        alert("Geolocalização não é suportada neste navegador.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          initMap(lat, lng);
+        },
+        (error) => {
+          alert("Não foi possível obter a localização: " + error.message);
+          // Fallback para SP
+          initMap(-23.55052, -46.633308);
+        }
+      );
+    }
+
+    // Pega a localização e o telefone da URL (GET)
+    getCurrentLocation();
+    const phoneFromURL = getPhoneFromURL();
+    const fullNameFromURL = getFullNameFromURL();
+    
+    if (phoneFromURL) {
+      document.getElementById('phone').value = phoneFromURL;  // Preenche o campo telefone, se disponível
+      document.getElementById('phone').disabled = true;  // Desabilita o campo de telefone
+    }
+
+    if (fullNameFromURL) {
+      document.getElementById('fullName').value = fullNameFromURL;  // Preenche o campo nome e sobrenome, se disponível
+    }
+
+    // Função para filtrar e exibir os bairros conforme o usuário digita
+    function filterNeighborhoods() {
+      const input = document.getElementById('neighborhood').value.toLowerCase();
+      const list = document.getElementById('neighborhood-list');
+      list.innerHTML = '';
+      if (input) {
+        const filtered = neighborhoods.filter(neighborhood => neighborhood.toLowerCase().includes(input));
+        filtered.forEach(neighborhood => {
+          const li = document.createElement('li');
+          li.textContent = neighborhood;
+          li.onclick = function () {
+            document.getElementById('neighborhood').value = neighborhood;
+            list.style.display = 'none';  // Oculta a lista após a seleção
+          };
+          list.appendChild(li);
+        });
+        list.style.display = filtered.length ? 'block' : 'none';
+      } else {
+        list.style.display = 'none';
+      }
+    }
+
+    // Enviar dados ao webhook
+    function sendData() {
+      const fullName = document.getElementById('fullName').value;
+      const street = document.getElementById('street').value;
+      const houseNumber = document.getElementById('houseNumber').value;
+      const phone = document.getElementById('phone').value || phoneFromURL || null;  // Use o telefone via GET ou do campo, se presente
+      const neighborhood = document.getElementById('neighborhood').value;
+      const city = document.getElementById('city').value;
+
+      if (!fullName || !street || !houseNumber || !selectedLatLng || !neighborhood || !city) {
+        showAlert('Por favor, preencha todos os campos e defina sua localização.', 'error');
+        return;
+      }
+
+      const payload = {
+        fullName: fullName,
+        street: street,
+        houseNumber: houseNumber,
+        phone: phone, // Pode ser nulo
+        latitude: selectedLatLng.lat,
+        longitude: selectedLatLng.lng,
+        neighborhood: neighborhood,
+        city: city // Inclui a cidade no payload
+      };
+
+      // Envia a requisição POST para o webhook
+      fetch('https://webhookn8n.ktecheletronicos.com.br/webhook/lat-long', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+      .then(response => response.json())
+      .then(data => {
+        showAlert('Dados enviados com sucesso!', 'success');
+      })
+      .catch(error => {
+        showAlert('Erro ao enviar os dados.', 'error');
+      });
+    }
+
+    // Função para mostrar alertas
+    function showAlert(message, type) {
+      const alertBox = document.getElementById('alert');
+      alertBox.classList.remove('error', 'success');
+      alertBox.classList.add(type);
+      alertBox.textContent = message;
+      alertBox.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
