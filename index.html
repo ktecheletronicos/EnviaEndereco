@@ -237,10 +237,11 @@
     }
   }
 
-  function sendData() {
-    const button = document.querySelector('button');
-    button.disabled = true;
-    setTimeout(() => { button.disabled = false; }, 30000);
+function sendData() {
+  const confirmacao = confirm("Você confirma que a sua localização no mapa está correta?\n\nClique em OK para confirmar ou em Cancelar para ajustar o pino.");
+  if (!confirmacao) {
+    return; // Cancela o envio se o usuário não confirmar
+  }
 
     const fullName = document.getElementById('fullName').value.trim();
     const street = document.getElementById('street').value.trim();
@@ -253,6 +254,9 @@
       showAlert('Por favor, preencha todos os campos corretamente e defina sua localização.', 'error');
       return;
     }
+	  const button = document.querySelector('button');
+  button.disabled = true;
+  setTimeout(() => { button.disabled = false; }, 30000);
 
     const payload = {
       fullName,
