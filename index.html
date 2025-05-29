@@ -6,7 +6,6 @@
   <link rel="icon" type="image/png" href="https://ktecheletronicos.github.io/EnviaEndereco/favicon-32x32.png" />
   <title>Confirmação de Endereço para Entrega da KTech</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Metatags Open Graph -->
   <meta property="og:title" content="Envio de Endereço para Entrega da KTech">
   <meta property="og:description" content="Envie sua localização com precisão e segurança no site para agilizar a entrega do seu produto. Serviço rápido e confiável para garantir a melhor experiência.">
   <meta property="og:image" content="https://ktecheletronicos.github.io/EnviaEndereco/banner.png">
@@ -202,6 +201,15 @@
     document.getElementById('fullName').value = fullNameFromURL;
   }
 
+  // >>> NOVO TRECHO: Esconde o campo fullName se edit=0
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('edit') === '0') {
+    const fullNameInput = document.getElementById('fullName');
+    const fullNameLabel = document.querySelector('label[for="fullName"]');
+    if (fullNameInput) fullNameInput.style.display = 'none';
+    if (fullNameLabel) fullNameLabel.style.display = 'none';
+  }
+
   function filterNeighborhoods() {
     const input = document.getElementById('neighborhood').value.toLowerCase();
     const list = document.getElementById('neighborhood-list');
@@ -223,52 +231,47 @@
     }
   }
 
-function sendData() {
-  const button = document.querySelector('button');
-  button.disabled = true; // Desativa o botão imediatamente
+  function sendData() {
+    const button = document.querySelector('button');
+    button.disabled = true;
+    setTimeout(() => { button.disabled = false; }, 30000);
 
-  // Reativa o botão após 30 segundos
-  setTimeout(() => {
-    button.disabled = false;
-  }, 30000);
+    const fullName = document.getElementById('fullName').value.trim();
+    const street = document.getElementById('street').value.trim();
+    const houseNumber = document.getElementById('houseNumber').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const neighborhood = document.getElementById('neighborhood').value.trim();
+    const city = document.getElementById('city').value.trim();
 
-  const fullName = document.getElementById('fullName').value.trim();
-  const street = document.getElementById('street').value.trim();
-  const houseNumber = document.getElementById('houseNumber').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const neighborhood = document.getElementById('neighborhood').value.trim();
-  const city = document.getElementById('city').value.trim();
+    if (fullName.length < 10 || !street || !houseNumber || !selectedLatLng || !neighborhood || !city) {
+      showAlert('Por favor, preencha todos os campos corretamente e defina sua localização.', 'error');
+      return;
+    }
 
-  if (fullName.length < 10 || !street || !houseNumber || !selectedLatLng || !neighborhood || !city) {
-    showAlert('Por favor, preencha todos os campos corretamente e defina sua localização.', 'error');
-    return;
+    const payload = {
+      fullName,
+      street,
+      houseNumber,
+      phone,
+      latitude: selectedLatLng.lat,
+      longitude: selectedLatLng.lng,
+      neighborhood,
+      city
+    };
+
+    fetch('https://webhookn8n.ktecheletronicos.com.br/webhook/lat-long', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    .then(response => response.json())
+    .then(data => {
+      showAlert('Dados enviados com sucesso! Verifique no Whatsapp', 'success');
+    })
+    .catch(error => {
+      showAlert('Erro ao enviar os dados.', 'error');
+    });
   }
-
-  const payload = {
-    fullName,
-    street,
-    houseNumber,
-    phone,
-    latitude: selectedLatLng.lat,
-    longitude: selectedLatLng.lng,
-    neighborhood,
-    city
-  };
-
-  fetch('https://webhookn8n.ktecheletronicos.com.br/webhook/lat-long', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  .then(response => response.json())
-  .then(data => {
-    showAlert('Dados enviados com sucesso! Verifique no Whatsapp', 'success');
-  })
-  .catch(error => {
-    showAlert('Erro ao enviar os dados.', 'error');
-  });
-}
-
 
   function showAlert(message, type) {
     const alertBox = document.getElementById('alert');
