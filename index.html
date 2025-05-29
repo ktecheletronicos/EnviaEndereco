@@ -29,6 +29,7 @@
       border-radius: 10px;
     }
     .form-container {
+      display: none;
       background: #fff;
       padding: 20px;
       width: 100%; max-width: 500px;
@@ -87,19 +88,20 @@
     }
     @keyframes blink-animation { 50% { opacity: 0; } }
     #phone { display: none; }
-	#banner {
-  display: block;
-  margin: 0 auto;
-  max-width: 100%;
-  height: auto;
-}
+    #banner {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
   </style>
 </head>
 <body>
 
-<!--<h2>Sistema para envio da localização para entrega</h2>--!>
 <div id="map">Carregando mapa...</div>
-<p class="blink">Ajuste o pino em azul para confirmar seu local</p>
+<p class="blink">Arraste o pino em AZUL para confirmar seu local</p>
+
+<button id="confirmLocationBtn">Confirmo que a localização está correta</button>
 
 <div class="form-container">
   <label for="fullName">Nome e Sobrenome:</label>
@@ -207,7 +209,6 @@
     document.getElementById('fullName').value = fullNameFromURL;
   }
 
-  // >>> NOVO TRECHO: Esconde o campo fullName se edit=0
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('edit') === '0') {
     const fullNameInput = document.getElementById('fullName');
@@ -237,11 +238,9 @@
     }
   }
 
-function sendData() {
-  const confirmacao = confirm("Você confirma que a sua localização no mapa está correta?\n\nClique em OK para confirmar ou em Cancelar para ajustar o pino.");
-  if (!confirmacao) {
-    return; // Cancela o envio se o usuário não confirmar
-  }
+  function sendData() {
+    const confirmacao = confirm("Você confirma que a sua localização no mapa está correta?\n\nClique em OK para confirmar ou em Cancelar para ajustar o pino.");
+    if (!confirmacao) return;
 
     const fullName = document.getElementById('fullName').value.trim();
     const street = document.getElementById('street').value.trim();
@@ -254,19 +253,16 @@ function sendData() {
       showAlert('Por favor, preencha todos os campos corretamente e defina sua localização.', 'error');
       return;
     }
-	  const button = document.querySelector('button');
-  button.disabled = true;
-  setTimeout(() => { button.disabled = false; }, 30000);
+
+    const button = document.querySelector('button');
+    button.disabled = true;
+    setTimeout(() => { button.disabled = false; }, 30000);
 
     const payload = {
-      fullName,
-      street,
-      houseNumber,
-      phone,
+      fullName, street, houseNumber, phone,
       latitude: selectedLatLng.lat,
       longitude: selectedLatLng.lng,
-      neighborhood,
-      city
+      neighborhood, city
     };
 
     fetch('https://webhookn8n.ktecheletronicos.com.br/webhook/lat-long', {
@@ -275,12 +271,8 @@ function sendData() {
       body: JSON.stringify(payload),
     })
     .then(response => response.json())
-    .then(data => {
-      showAlert('Dados enviados com sucesso! Verifique no Whatsapp', 'success');
-    })
-    .catch(error => {
-      showAlert('Erro ao enviar os dados.', 'error');
-    });
+    .then(() => showAlert('Dados enviados com sucesso! Verifique no Whatsapp', 'success'))
+    .catch(() => showAlert('Erro ao enviar os dados.', 'error'));
   }
 
   function showAlert(message, type) {
@@ -295,6 +287,12 @@ function sendData() {
     input.addEventListener('focus', function () {
       this.select();
     });
+  });
+
+  // NOVO: Mostrar form-container após clique no botão
+  document.getElementById('confirmLocationBtn').addEventListener('click', function () {
+    document.querySelector('.form-container').style.display = 'block';
+    this.style.display = 'none';
   });
 </script>
 </body>
