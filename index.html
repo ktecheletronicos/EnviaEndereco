@@ -87,11 +87,17 @@
     }
     @keyframes blink-animation { 50% { opacity: 0; } }
     #phone { display: none; }
+	#banner {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
   </style>
 </head>
 <body>
 
-<h2>Sistema para envio da localização para entrega</h2>
+<!--<h2>Sistema para envio da localização para entrega</h2>--!>
 <div id="map">Carregando mapa...</div>
 <p class="blink">Ajuste o pino em azul para confirmar sua localização</p>
 
@@ -115,7 +121,7 @@
   <input type="hidden" id="city" name="city">
   <button onclick="sendData()">Enviar para à loja</button>
   <div id="alert" class="alert"></div>
-  <br/><br/><center><img type="image/png" src="https://ktecheletronicos.github.io/EnviaEndereco/banner.png"/></center>
+  <br/><br/><img id="banner" type="image/png" src="https://ktecheletronicos.github.io/EnviaEndereco/logo_sistema.png"/>
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
