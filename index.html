@@ -25,7 +25,7 @@
     h2 { color: #2c3e50; margin-bottom: 20px; }
     #map {
       height: 400px; width: 100%;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       border-radius: 10px;
     }
     .form-container {
@@ -94,6 +94,28 @@
       max-width: 100%;
       height: auto;
     }
+
+.radio-group {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  color: #34495e;
+  cursor: pointer;
+}
+
+.radio-group input[type="radio"] {
+  margin: 0;
+  transform: translateY(1px); /* pequeno ajuste de alinhamento */
+}
+
+
   </style>
 </head>
 <body>
@@ -106,6 +128,13 @@
 <div class="form-container">
   <label for="fullName">Nome e Sobrenome:</label>
   <input type="text" id="fullName" placeholder="Nome e sobrenome (Ex: Pedro Henrique Silva)" />
+
+<label>Tipo de endereço:</label>
+<div class="radio-group">
+  <label><input type="radio" name="tipoEndereco" value="CASA"> Casa</label>
+  <label><input type="radio" name="tipoEndereco" value="EMPRESA"> Empresa</label>
+  <label><input type="radio" name="tipoEndereco" value="CONDOMINIO"> Condomínio</label>
+</div>
 
   <label for="street">Nome da rua, quadra ou nome da empresa:</label>
   <input type="text" id="street" placeholder="Exemplo: Metropolitan Hotel, Av. Frei Serafim" />
@@ -128,11 +157,14 @@
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
+  const centerLat = -5.090000;
+  const centerLng = -42.811000;
+  const maxDistanceKm = 13;
   let selectedLatLng = null;
   let marker = null;
   let map = null;
 
-  const neighborhoods = [ /* ...lista de bairros... */ ];
+  const neighborhoods = []; // sua lista aqui
 
   function getPhoneFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -151,7 +183,10 @@
       .then(response => response.json())
       .then(data => {
         const address = data.address;
-        if (address.road) document.getElementById('street').value = address.road || '';
+        if (address.road) {
+			const ruaComPrefixo = aplicarPrefixoTipoEndereco(address.road);
+			document.getElementById('street').value = ruaComPrefixo;
+		}
         if (address.suburb) document.getElementById('neighborhood').value = address.suburb || '';
         if (address.house_number) document.getElementById('houseNumber').value = address.house_number || '';
         if (address.city || address.town || address.state) {
@@ -171,12 +206,12 @@
     marker = L.marker([lat, lng], { draggable: true }).addTo(map);
     selectedLatLng = marker.getLatLng();
     fillAddressFromLatLng(lat, lng);
-    checkCoordinatesAndDisableButton(); // [ADICIONADO]
+    checkCoordinatesAndDisableButton();
 
     marker.on('dragend', function (e) {
       selectedLatLng = e.target.getLatLng();
       fillAddressFromLatLng(selectedLatLng.lat, selectedLatLng.lng);
-      checkCoordinatesAndDisableButton(); // [ADICIONADO]
+      checkCoordinatesAndDisableButton();
     });
   }
 
@@ -194,29 +229,55 @@
       },
       (error) => {
         alert("Erro, permita o acesso a localização: " + error.message);
-        initMap(-5.090000, -42.811000);
+        initMap(centerLat, centerLng);
       }
     );
   }
 
   getCurrentLocation();
+  
+
   const phoneFromURL = getPhoneFromURL();
   const fullNameFromURL = getFullNameFromURL();
+  if (phoneFromURL) document.getElementById('phone').value = phoneFromURL;
+  if (fullNameFromURL) document.getElementById('fullName').value = fullNameFromURL;
 
-  if (phoneFromURL) {
-    document.getElementById('phone').value = phoneFromURL;
+  if (new URLSearchParams(window.location.search).get('edit') === '0') {
+    document.getElementById('fullName').style.display = 'none';
+    document.querySelector('label[for="fullName"]').style.display = 'none';
   }
 
-  if (fullNameFromURL) {
-    document.getElementById('fullName').value = fullNameFromURL;
+  function checkCoordinatesAndDisableButton() {
+    const sendButton = document.querySelector('.form-container button');
+    if (!selectedLatLng) return;
+
+    const lat = parseFloat(selectedLatLng.lat).toFixed(6);
+    const lng = parseFloat(selectedLatLng.lng).toFixed(6);
+
+    const distance = haversineDistance(-5.110843, -42.742825, parseFloat(lat), parseFloat(lng));
+
+    if (lat == "-5.090000" && lng == "-42.811000") {
+      sendButton.disabled = true;
+      showAlert("Essas coordenadas não são válidas. Por favor, ajuste o pino no mapa.", "error");
+    } else if (distance > maxDistanceKm) {
+      sendButton.disabled = true;
+      showAlert(`Localização fora da área de entrega do motoboy. Você está a aproximadamente ${distance.toFixed(2)} km. O limite é ${maxDistanceKm} km. Te enviamos somente via Uber / 99`, "error");
+    } else {
+      sendButton.disabled = false;
+      document.getElementById('alert').style.display = 'none';
+    }
   }
 
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('edit') === '0') {
-    const fullNameInput = document.getElementById('fullName');
-    const fullNameLabel = document.querySelector('label[for="fullName"]');
-    if (fullNameInput) fullNameInput.style.display = 'none';
-    if (fullNameLabel) fullNameLabel.style.display = 'none';
+  function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 
   function filterNeighborhoods() {
@@ -250,8 +311,11 @@
     const phone = document.getElementById('phone').value.trim();
     const neighborhood = document.getElementById('neighborhood').value.trim();
     const city = document.getElementById('city').value.trim();
+	// Dentro da função sendData(), antes de montar o payload:
+	const tipoEndereco = document.querySelector('input[name="tipoEndereco"]:checked');
 
-    if (fullName.length < 10 || !street || !houseNumber || !selectedLatLng || !neighborhood || !city) {
+
+    if (fullName.length < 10 || !street || !houseNumber || !selectedLatLng || !neighborhood || !city || !tipoEndereco) {
       showAlert('Por favor, preencha todos os campos corretamente e defina sua localização.', 'error');
       return;
     }
@@ -264,7 +328,8 @@
       fullName, street, houseNumber, phone,
       latitude: selectedLatLng.lat,
       longitude: selectedLatLng.lng,
-      neighborhood, city
+      neighborhood, city,
+	  tipoEndereco
     };
 
     fetch('https://webhookn8n.ktecheletronicos.com.br/webhook/lat-long', {
@@ -294,25 +359,31 @@
   document.getElementById('confirmLocationBtn').addEventListener('click', function () {
     document.querySelector('.form-container').style.display = 'block';
     this.style.display = 'none';
-    checkCoordinatesAndDisableButton(); // [ADICIONADO]
+    checkCoordinatesAndDisableButton();
   });
+  
+function aplicarPrefixoTipoEndereco(nomeRuaOriginal) {
+  const tipo = document.querySelector('input[name="tipoEndereco"]:checked')?.value || '';
+  let prefixo = '';
 
-  // [ADICIONADO] Função para desabilitar o botão se coordenadas forem inválidas
-  function checkCoordinatesAndDisableButton() {
-    const sendButton = document.querySelector('.form-container button');
-    if (!selectedLatLng) return;
+  if (tipo === 'EMPRESA') prefixo = 'NOME_EMPRESA - ';
+  else if (tipo === 'CONDOMINIO') prefixo = 'NOME_Condomínio - ';
+  else prefixo = '';
 
-    const lat = parseFloat(selectedLatLng.lat).toFixed(6);
-    const lng = parseFloat(selectedLatLng.lng).toFixed(6);
+  const nomeRuaSemPrefixo = nomeRuaOriginal.replace(/^(Casa|Empresa|Condomínio):\s*/i, '').trim();
+  return `${prefixo}${nomeRuaSemPrefixo}`;
+}
 
-    if (lat == "-5.090000" && lng == "-42.811000") {
-      sendButton.disabled = true;
-      showAlert("Essas coordenadas não são válidas. Por favor, ajuste o pino no mapa.", "error");
-    } else {
-      sendButton.disabled = false;
-      document.getElementById('alert').style.display = 'none';
+// Atualiza o campo da rua se o usuário mudar o tipo de endereço
+document.querySelectorAll('input[name="tipoEndereco"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const campoRua = document.getElementById('street').value;
+    if (campoRua.trim()) {
+      document.getElementById('street').value = aplicarPrefixoTipoEndereco(campoRua);
     }
-  }
+  });
+});
+  
 </script>
 </body>
 </html>
