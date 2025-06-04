@@ -133,9 +133,9 @@
 
   <label>Tipo de endereço:</label>
   <div class="radio-group">
-    <label><input type="radio" name="tipoEndereco" value="CASA"> Casa</label>
-    <label><input type="radio" name="tipoEndereco" value="EMPRESA"> Empresa</label>
-    <label><input type="radio" name="tipoEndereco" value="CONDOMINIO"> Condomínio</label>
+    <label><input type="radio" name="tipoEndereco" value="CASA">🏠 Casa</label>
+    <label><input type="radio" name="tipoEndereco" value="EMPRESA">🏢 Empresa</label>
+    <label><input type="radio" name="tipoEndereco" value="CONDOMINIO">🏘️ Condomínio</label>
   </div>
 
   <div id="empresaOuCondominioContainer">
@@ -279,6 +279,10 @@ if (
   showAlert('Por favor, preencha todos os campos corretamente e defina sua localização.', 'error');
   return;
 }
+
+    const button = document.querySelector('.form-container button');
+    button.disabled = true;
+    setTimeout(() => { button.disabled = false; }, 60000);
 
     const payload = {
       fullName,
