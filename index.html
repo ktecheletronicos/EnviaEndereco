@@ -112,7 +112,12 @@
     }
     #empresaOuCondominioContainer {
       display: none;
+	    font-weight: bold;
+
     }
+	.alert {
+  white-space: pre-line;
+}
   </style>
 </head>
 <body>
@@ -124,7 +129,7 @@
 
 <div class="form-container">
   <label for="fullName">Nome e Sobrenome:</label>
-  <input type="text" id="fullName" placeholder="Nome e sobrenome (Ex: Pedro Henrique Silva)" />
+  <input type="text" id="fullName" placeholder="Nome e sobrenome (Ex: Pedro Henrique Silva)" style="text-transform: uppercase;"/>
 
   <label>Tipo de endereço:</label>
   <div class="radio-group">
@@ -231,7 +236,7 @@
       showAlert("Essas coordenadas não são válidas. Por favor, ajuste o pino no mapa.", "error");
     } else if (distance > maxDistanceKm) {
       sendButton.disabled = true;
-      showAlert(`Localização fora da área de entrega do motoboy. Você está a aproximadamente ${distance.toFixed(2)} km. O limite é ${maxDistanceKm} km.`, "error");
+      showAlert(`Neste local somente via Uber ou 99 entregas \nNos envie o endereço diretamente no Whatsapp \nVocê está a aproximadamente ${distance.toFixed(2)} km.`, "error");
     } else {
       sendButton.disabled = false;
       document.getElementById('alert').style.display = 'none';
