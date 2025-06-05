@@ -216,12 +216,37 @@
     });
   }
 
-  function getCurrentLocation() {
-    navigator.geolocation.getCurrentPosition(
-      position => initMap(position.coords.latitude, position.coords.longitude),
-      () => initMap(centerLat, centerLng)
-    );
+function getCurrentLocation() {
+  if (!navigator.geolocation) {
+    initMap(centerLat, centerLng);
+    return;
   }
+
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      if (accuracy > 50) {
+        alert("Sua localização pode estar imprecisa.\nAtive o GPS ou use um celular para melhor precisão.");
+      }
+
+      initMap(lat, lng);
+    },
+    error => {
+      console.warn('Erro ao obter localização:', error.message);
+      initMap(centerLat, centerLng); // fallback para posição padrão
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+}
+
+
 
   function checkCoordinates() {
     const sendButton = document.querySelector('.form-container button');
