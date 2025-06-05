@@ -337,5 +337,25 @@ if (
   }
   };
 </script>
+<!-- Rodapé com link para Simulador de taxas -->
+<div style="margin-top: 40px; display: flex; flex-direction: column; align-items: center; width: 100%;">
+  <a href="#"
+     onclick="document.getElementById('simulador-container').style.display='block'; this.style.display='none'; return false;"
+     style="color: #3498db; font-weight: bold; text-decoration: underline;">
+    Simulador de taxas cartão
+  </a>
+
+  <div id="simulador-container" style="display: none; margin-top: 20px; width: 100%; max-width: 700px;">
+    <div style="position: relative; width: 100%; overflow-x: auto;">
+      <iframe 
+        src="https://ktecheletronicos.github.io/EnviaEndereco/taxasCartao.html"
+        style="width: 100%; min-width: 600px; height: 1200px; border: none; border-radius: 8px;"
+        scrolling="no"
+      ></iframe>
+    </div>
+  </div>
+</div>
+
+
 </body>
 </html>
