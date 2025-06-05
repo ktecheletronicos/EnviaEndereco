@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulador de Taxas de Cartão</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f4f7fb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    .form-container {
+      background: #fff;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    label, input {
+      display: block;
+      width: 100%;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+    input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background-color: #3498db;
+      color: white;
+    }
+    th:nth-child(2), td:nth-child(2) {
+      display: none;
+    }
+    #ajusteTaxa {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Simulador de Taxas de Cartão</h2>
+  <div class="form-container">
+    <label for="valor">Digite o valor (R$):</label>
+    <input type="number" id="valor" placeholder="Ex: 100" min="0" step="5" />
+
+    <!-- Campo oculto para ajuste percentual -->
+    <input type="number" id="ajusteTaxa" value="0.5" />
+
+    <table id="tabela">
+      <thead>
+        <tr>
+          <th>Opção</th>
+          <th>Taxa (%)</th>
+          <th>Valor com Taxa (R$)</th>
+          <th>Parcela (R$)</th>
+        </tr>
+      </thead>
+      <tbody id="resultados"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const taxasBase = {
+      'Débito': 1.45,
+      '1x': 3.51,
+      '2x': 6.99,
+      '3x': 6.99,
+      '4x': 7.99,
+      '5x': 9.99,
+      '6x': 10.99,
+      '7x': 11.99,
+      '8x': 11.99,
+      '9x': 12.99,
+      '10x': 13.99,
+      '11x': 14.79,
+      '12x': 14.79
+    };
+
+    const inputValor = document.getElementById('valor');
+    const inputAjuste = document.getElementById('ajusteTaxa');
+    const tabelaResultados = document.getElementById('resultados');
+
+    function calcular(valorLiquido) {
+      tabelaResultados.innerHTML = '';
+      if (!valorLiquido || valorLiquido <= 0) return;
+
+      const ajuste = parseFloat(inputAjuste.value) || 0;
+
+      for (const [parcela, taxa] of Object.entries(taxasBase)) {
+        const taxaAjustada = taxa + ajuste;
+        const numeroParcelas = parcela === 'Débito' ? 1 : parseInt(parcela);
+        const valorBruto = valorLiquido / (1 - taxaAjustada / 100);
+        const valorParcela = valorBruto / numeroParcelas;
+
+        const linha = `
+          <tr>
+            <td>${parcela}</td>
+            <td style="display:none">${taxaAjustada.toFixed(2).replace('.', ',')}%</td>
+            <td>R$ ${valorBruto.toFixed(2).replace('.', ',')}</td>
+            <td>R$ ${valorParcela.toFixed(2).replace('.', ',')}</td>
+          </tr>
+        `;
+
+        tabelaResultados.innerHTML += linha;
+      }
+    }
+
+    inputValor.addEventListener('input', () => {
+      const valor = parseFloat(inputValor.value);
+      calcular(valor);
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('valor')) {
+      const valorParam = parseFloat(params.get('valor'));
+      if (!isNaN(valorParam)) {
+        inputValor.value = valorParam;
+        calcular(valorParam);
+      }
+    }
+  </script>
+</body>
+</html>
