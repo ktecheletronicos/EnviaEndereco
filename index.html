@@ -94,22 +94,33 @@
       max-width: 100%;
       height: auto;
     }
-    .radio-group {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .radio-group label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 16px;
-      color: #34495e;
-      cursor: pointer;
-    }
-    .radio-group input[type="radio"] {
-      margin: 0;
-    }
+.radio-group {
+  display: flex;
+  flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  font-size: 1rem;
+  cursor: pointer;
+  white-space: nowrap; /* Evita quebra de texto */
+  flex: 1 1 auto; /* Permite ajuste automático conforme espaço */
+  min-width: 100px; /* Mantém largura mínima */
+  justify-content: center;
+  text-align: center;
+}
+
+.radio-group input[type="radio"] {
+  margin-right: 8px;
+  accent-color: #007bff;
+}
     #empresaOuCondominioContainer {
       display: none;
 	    font-weight: bold;
@@ -123,13 +134,14 @@
 <body>
 
 <div id="map">Carregando mapa...</div>
-<p class="blink">Arraste o pino em AZUL para confirmar seu local</p>
+<p class="blink">Mova o pino para a frente da sua Casa, Empresa ou Condomínio</p>
 
 <button id="confirmLocationBtn">Confirmo que a localização está correta</button>
 
 <div class="form-container">
   <label for="fullName">Nome e Sobrenome:</label>
   <input type="text" id="fullName" placeholder="Nome e sobrenome (Ex: Pedro Henrique Silva)" style="text-transform: uppercase;"/>
+  <small id="nameWarning" style="color: red; display: none;">⚠️ Nome incompleto, coloque seu sobrenome</small>
 
   <label>Tipo de endereço:</label>
   <div class="radio-group">
@@ -351,6 +363,14 @@ if (
       document.getElementById('empresaOuCondominioContainer').style.display = tipo === 'CASA' ? 'none' : 'block';
     });
   });
+  
+document.getElementById('fullName').addEventListener('blur', () => {
+  const input = document.getElementById('fullName');
+  const warning = document.getElementById('nameWarning');
+  const name = input.value.trim();
+  warning.style.display = name.length < 10 ? 'block' : 'none';
+});
+
 
   window.onload = () => {
     getCurrentLocation();
