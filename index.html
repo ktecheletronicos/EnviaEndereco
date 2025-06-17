@@ -180,13 +180,22 @@
   <label for="neighborhood">Bairro:</label>
   <input type="text" id="neighborhood" placeholder="Digite ou selecione um bairro" >
   <ul id="neighborhood-list" style="display:none;"></ul>
+  <label for="formaPagamento">Forma de pagamento preferida: (Não é a confirmação do pedido ainda)</label>
+<select id="formaPagamento">
+  <option value="">Selecione</option>
+  <option value="PIX">PIX</option>
+  <option value="ESPÉCIE">ESPECIE</option>
+  <option value="CARTÃO">CARTÃO</option>
+  <option value="VARIADO">VARIADO</option>
+</select>
+
 
   <label for="phone"></label>
   <input type="text" id="phone" placeholder="Telefone com DDD" />
 
   <input type="hidden" id="city" name="city">
 
-  <button onclick="sendData()">Enviar para à loja</button>
+  <button onclick="sendData()">Enviar dados e aguardar confirmação</button>
   <div id="alert" class="alert"></div>
   <br/><br/><img id="banner" src="https://ktecheletronicos.github.io/EnviaEndereco/logo_sistema.png"/>
 </div>
@@ -309,7 +318,7 @@ function getCurrentLocation() {
   function sendData() {
     const confirmacao = confirm("Você confirma que a sua localização no mapa está correta?\n\nClique em OK para confirmar ou em Cancelar para ajustar o pino.");
     if (!confirmacao) return;
-
+	const formaPagamento = document.getElementById('formaPagamento').value;
     const tipoEndereco = document.querySelector('input[name="tipoEndereco"]:checked')?.value;
     const fullName = document.getElementById('fullName').value.trim();
     const empresaOuCondominio = document.getElementById('empresaOuCondominio').value.trim();
@@ -318,6 +327,11 @@ function getCurrentLocation() {
     const phone = document.getElementById('phone').value.trim();
     const neighborhood = document.getElementById('neighborhood').value.trim();
     const city = document.getElementById('city').value.trim();
+
+if (!formaPagamento) {
+  showAlert('Por favor, selecione a forma de pagamento preferida.', 'error');
+  return;
+}
 
 if (
   fullName.length < 10 ||
@@ -329,7 +343,7 @@ if (
   !tipoEndereco ||
   (tipoEndereco !== 'CASA' && empresaOuCondominio.length < 3)
 ) {
-  showAlert('Por favor, preencha todos os campos corretamente e defina sua localização.', 'error');
+  showAlert('Por favor, preencha o SOBRENOME, todos os campos corretamente e defina sua localização.', 'error');
   return;
 }
 
@@ -346,6 +360,7 @@ if (
       neighborhood,
       city,
       phone,
+	  formaPagamento,
       latitude: selectedLatLng.lat,
       longitude: selectedLatLng.lng
     };
