@@ -143,6 +143,19 @@
     justify-content: flex-start;
   }
 }
+  .form-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap; /* permite que quebre em telas pequenas */
+    margin-bottom: 10px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* divide igualmente o espaço */
+    min-width: 150px;
+  }
 
   </style>
 </head>
@@ -174,11 +187,17 @@
   <label for="street">Nome da rua ou quadra:</label>
   <input type="text" id="street" placeholder="Exemplo: Av. Frei Serafim, Quadra 22" />
 
-  <label for="houseNumber">Número do imóvel:</label>
-  <input type="text" id="houseNumber" placeholder="Número do imóvel (Ex: 12A)" />
+  <div class="form-row">
+  <div class="form-group">
+    <label for="houseNumber">Número do imóvel:</label>
+    <input type="text" id="houseNumber" placeholder="Número do imóvel (Ex: 12A)" />
+  </div>
 
-  <label for="neighborhood">Bairro:</label>
-  <input type="text" id="neighborhood" placeholder="Digite ou selecione um bairro" >
+  <div class="form-group">
+    <label for="neighborhood">Bairro:</label>
+    <input type="text" id="neighborhood" placeholder="Digite ou selecione um bairro">    
+  </div>
+</div>
   <ul id="neighborhood-list" style="display:none;"></ul>
   <label for="formaPagamento">Forma de pagamento preferida: (Não é a confirmação do pedido ainda)</label>
 <select id="formaPagamento">
