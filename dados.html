@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Fingerprint do Navegador</title>
+</head>
+<body>
+  <h2>Fingerprint do Navegador</h2>
+  <pre id="dados"></pre>
+
+  <script>
+    async function coletarFingerprint() {
+      const fingerprint = {
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: navigator.platform,
+        screenResolution: `${screen.width}x${screen.height}`,
+        colorDepth: screen.colorDepth,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        plugins: Array.from(navigator.plugins).map(p => p.name),
+        cookieEnabled: navigator.cookieEnabled,
+        webglVendor: '',
+        webglRenderer: ''
+      };
+
+      // Coleta do WebGL renderer (GPU)
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          fingerprint.webglVendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+          fingerprint.webglRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        }
+      } catch (e) {
+        fingerprint.webglRenderer = 'Não disponível';
+      }
+
+      document.getElementById('dados').textContent = JSON.stringify(fingerprint, null, 2);
+    }
+
+    coletarFingerprint();
+  </script>
+</body>
+</html>
