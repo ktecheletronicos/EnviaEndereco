@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/png" href="https://ktecheletronicos.github.io/EnviaEndereco/favicon-32x32.png" />
+  <title>Confirmação de Endereço para Entrega da KTech</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta property="og:title" content="Envio de Endereço para Entrega da KTech">
+  <meta property="og:description" content="Envie sua localização com precisão e segurança no site para agilizar a entrega do seu produto. Serviço rápido e confiável para garantir a melhor experiência.">
+  <meta property="og:image" content="https://ktecheletronicos.github.io/EnviaEndereco/logo_sistema.png">
+  <meta property="og:url" content="https://ktecheletronicos.com.br">
+  <meta property="og:type" content="website">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f4f7fb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h2 { color: #2c3e50; margin-bottom: 20px; }
+    #map {
+      height: 400px; width: 100%;
+      margin-bottom: 10px;
+      border-radius: 10px;
+    }
+    .form-container {
+      display: none;
+      background: #fff;
+      padding: 20px;
+      width: 100%; max-width: 500px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    label {
+      font-size: 16px; color: #34495e;
+      margin-bottom: 8px; display: block;
+    }
+    input, select {
+      width: 100%; padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      background-color: #fafafa;
+      transition: all 0.3s ease;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3498db;
+      background-color: #e6f3ff;
+    }
+    button {
+      width: 100%; padding: 12px;
+      background-color: #3498db;
+      color: white; font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    button:hover { background-color: #2980b9; }
+    button:disabled {
+      background-color: #BDC3C7;
+      cursor: not-allowed;
+    }
+    input:disabled {
+      background-color: #ddd;
+      cursor: not-allowed;
+    }
+    .alert {
+      background-color: #e74c3c;
+      color: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 20px;
+      display: none;
+    }
+    .success { background-color: #2ecc71; }
+    .blink {
+      animation: blink-animation 1s steps(5, start) infinite;
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    @keyframes blink-animation { 50% { opacity: 0; } }
+    #phone { display: none; }
+    #banner {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  font-size: 1rem;
+  cursor: pointer;
+  flex-basis: calc(33.333% - 8px); /* 3 por linha com gap */
+  max-width: calc(33.333% - 8px);
+  word-break: break-word;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.radio-group input[type="radio"] {
+  margin-right: 2px;
+  accent-color: #007bff;
+}
+    #empresaOuCondominioContainer {
+      display: none;
+	    font-weight: bold;
+
+    }
+	.alert {
+  white-space: pre-line;
+}
+@media (max-width: 480px) {
+  .radio-group {
+    flex-direction: column;
+  }
+
+  .radio-group label {
+    flex-basis: 100%;
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+}
+  .form-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap; /* permite que quebre em telas pequenas */
+    margin-bottom: 10px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* divide igualmente o espaço */
+    min-width: 150px;
+  }
+
+  </style>
+</head>
+<body>
+
+<div id="map">Carregando mapa...</div>
+<p class="blink">Arraste o pino para a RUA em frente da</p>
+<p class="blink">Casa, Empresa ou Condomínio</p>
+
+<button id="confirmLocationBtn">Confirmo que a localização está na <b>RUA</b> correta</button>
+
+<div class="form-container">
+  <label for="fullName">Nome e Sobrenome:</label>
+  <input type="text" id="fullName" placeholder="Nome e sobrenome (Ex: Pedro Henrique Silva)" style="text-transform: uppercase;"/>
+  <small id="nameWarning" style="color: red; display: none;">⚠️ Nome incompleto, coloque seu sobrenome</small>
+
+  <label>Tipo de endereço:</label>
+  <div class="radio-group">
+    <label><input type="radio" name="tipoEndereco" value="CONDOMINIO">🏘️ Condomínio</label>
+    <label><input type="radio" name="tipoEndereco" value="EMPRESA">🏢 Empresa</label>
+    <label><input type="radio" name="tipoEndereco" value="CASA">🏠 Casa</label>
+  </div>
+
+  <div id="empresaOuCondominioContainer">
+    <label for="empresaOuCondominio" id="labelEmpresaOuCondominio">Nome da empresa ou condomínio:</label>
+    <input type="text" id="empresaOuCondominio" placeholder="Digite o nome da empresa ou condomínio" />
+  </div>
+
+  <label for="street">Nome da rua ou quadra:</label>
+  <input type="text" id="street" placeholder="Exemplo: Av. Frei Serafim, Quadra 22" />
+
+  <div class="form-row">
+  <div class="form-group">
+    <label for="houseNumber">Número do imóvel:</label>
+    <input type="text" id="houseNumber" placeholder="Número do imóvel (Ex: 12A)" />
+  </div>
+
+  <div class="form-group">
+    <label for="neighborhood">Bairro:</label>
+    <input type="text" id="neighborhood" placeholder="Digite ou selecione um bairro">    
+  </div>
+</div>
+  <ul id="neighborhood-list" style="display:none;"></ul>
+  <label for="formaPagamento">Forma de pagamento preferida: (Não é a confirmação do pedido ainda)</label>
+<select id="formaPagamento">
+  <option value="">Selecione</option>
+  <option value="PIX">PIX</option>
+  <option value="ESPÉCIE">ESPECIE</option>
+  <option value="CARTÃO">CARTÃO</option>
+  <option value="VARIADO">VARIADO</option>
+</select>
+
+
+  <label for="phone"></label>
+  <input type="text" id="phone" placeholder="Telefone com DDD" />
+
+  <input type="hidden" id="city" name="city">
+
+  <button onclick="sendData()">Enviar dados e aguardar confirmação</button>
+  <div id="alert" class="alert"></div>
+  <br/><br/><img id="banner" src="https://ktecheletronicos.github.io/EnviaEndereco/logo_sistema.png"/>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  const centerLat = -5.090000;
+  const centerLng = -42.811000;
+  const maxDistanceKm = 13;
+  let selectedLatLng = null;
+  let marker = null;
+
+  function getPhoneFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('telefone') || '';
+  }
+
+  function getFullNameFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('nome') || '';
+  }
+
+  function fillAddressFromLatLng(lat, lng) {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&lang=pt-br`;
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        const address = data.address;
+        if (address.road) document.getElementById('street').value = address.road;
+        if (address.suburb) document.getElementById('neighborhood').value = address.suburb || '';
+        if (address.house_number) document.getElementById('houseNumber').value = address.house_number || '';
+        if (address.city || address.town || address.state) {
+          const cidadeEstado = `${address.city || address.town || ''} - ${address.state || ''}`.trim();
+          document.getElementById('city').value = cidadeEstado;
+        }
+      })
+      .catch(console.error);
+  }
+
+  function initMap(lat, lng) {
+    const map = L.map('map').setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+    selectedLatLng = marker.getLatLng();
+    fillAddressFromLatLng(lat, lng);
+    checkCoordinates();
+
+    marker.on('dragend', function (e) {
+      selectedLatLng = e.target.getLatLng();
+      fillAddressFromLatLng(selectedLatLng.lat, selectedLatLng.lng);
+      checkCoordinates();
+    });
+  }
+
+function getCurrentLocation() {
+  if (!navigator.geolocation) {
+    initMap(centerLat, centerLng);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      if (accuracy > 50) {
+        alert("Sua localização pode estar imprecisa.\nAtive o GPS ou use um celular para melhor precisão.");
+      }
+
+      initMap(lat, lng);
+    },
+    error => {
+      console.warn('Erro ao obter localização:', error.message);
+      initMap(centerLat, centerLng); // fallback para posição padrão
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+}
+
+
+
+  function checkCoordinates() {
+    const sendButton = document.querySelector('.form-container button');
+    if (!selectedLatLng) return;
+
+    const lat = parseFloat(selectedLatLng.lat).toFixed(6);
+    const lng = parseFloat(selectedLatLng.lng).toFixed(6);
+    const distance = haversineDistance(-5.110843, -42.742825, lat, lng);
+
+    if (lat == "-5.090000" && lng == "-42.811000") {
+      sendButton.disabled = true;
+      showAlert("Essas coordenadas não são válidas. Por favor, ajuste o pino no mapa.", "error");
+    } else if (distance > maxDistanceKm) {
+      sendButton.disabled = true;
+      showAlert(`Neste local somente via Uber ou 99 entregas \nNos envie o endereço diretamente no Whatsapp \nVocê está a aproximadamente ${distance.toFixed(2)} km.`, "error");
+    } else {
+      sendButton.disabled = false;
+      document.getElementById('alert').style.display = 'none';
+    }
+  }
+
+  function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function sendData() {
+    const confirmacao = confirm("Você confirma que a sua localização no mapa está correta?\n\nClique em OK para confirmar ou em Cancelar para ajustar o pino.");
+    if (!confirmacao) return;
+	const formaPagamento = document.getElementById('formaPagamento').value;
+    const tipoEndereco = document.querySelector('input[name="tipoEndereco"]:checked')?.value;
+    const fullName = document.getElementById('fullName').value.trim();
+    const empresaOuCondominio = document.getElementById('empresaOuCondominio').value.trim();
+    const street = document.getElementById('street').value.trim();
+    const houseNumber = document.getElementById('houseNumber').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const neighborhood = document.getElementById('neighborhood').value.trim();
+    const city = document.getElementById('city').value.trim();
+
+if (!formaPagamento) {
+  showAlert('Por favor, selecione a forma de pagamento preferida.', 'error');
+  return;
+}
+
+if (
+  fullName.length < 10 ||
+  !street ||
+  !houseNumber ||
+  !selectedLatLng ||
+  !neighborhood ||
+  !city ||
+  !tipoEndereco ||
+  (tipoEndereco !== 'CASA' && empresaOuCondominio.length < 3)
+) {
+  showAlert('Por favor, preencha o SOBRENOME, todos os campos corretamente e defina sua localização.', 'error');
+  return;
+}
+
+    const button = document.querySelector('.form-container button');
+    button.disabled = true;
+    setTimeout(() => { button.disabled = false; }, 60000);
+
+    const payload = {
+      fullName,
+      tipoEndereco,
+      empresaOuCondominio: tipoEndereco !== 'CASA' ? empresaOuCondominio : '',
+      street,
+      houseNumber,
+      neighborhood,
+      city,
+      phone,
+	  formaPagamento,
+      latitude: selectedLatLng.lat,
+      longitude: selectedLatLng.lng
+    };
+
+    fetch('https://webhookn8n.ktecheletronicos.com.br/webhook/lat-long', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(() => showAlert("Dados enviados com sucesso! Verifique no Whatsapp", "success"))
+    .catch(() => showAlert("Erro ao enviar os dados.", "error"));
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    el.className = 'alert ' + (type === 'success' ? 'success' : '');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  document.getElementById('confirmLocationBtn').addEventListener('click', () => {
+    document.querySelector('.form-container').style.display = 'block';
+    document.getElementById('confirmLocationBtn').style.display = 'none';
+    checkCoordinates();
+  });
+
+  document.querySelectorAll('input[name="tipoEndereco"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const tipo = radio.value;
+      const container = document.getElementById('empresaOuCondominio');
+      document.getElementById('empresaOuCondominioContainer').style.display = tipo === 'CASA' ? 'none' : 'block';
+    });
+  });
+  
+document.getElementById('fullName').addEventListener('blur', () => {
+  const input = document.getElementById('fullName');
+  const warning = document.getElementById('nameWarning');
+  const name = input.value.trim();
+  warning.style.display = name.length < 10 ? 'block' : 'none';
+});
+
+
+  window.onload = () => {
+    getCurrentLocation();
+    document.getElementById('phone').value = getPhoneFromURL();
+    document.getElementById('fullName').value = getFullNameFromURL();
+	
+ // ⏳ Tenta por até 30s capturar bairro (e coordenadas), senão envia mesmo assim
+let tentativas = 0;
+const intervalo = setInterval(() => {
+  const coords = selectedLatLng;
+  const neighborhood = document.getElementById('neighborhood')?.value.trim() || "";
+
+  // Envia somente quando o bairro estiver preenchido
+  if (neighborhood) {
+    const numero = getPhoneFromURL();
+    const fullName = getFullNameFromURL();
+    const latitude = coords?.lat || null;
+    const longitude = coords?.lng || null;
+
+    fetch('https://webhookn8n.ktecheletronicos.com.br/webhook/lat-long', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ numero, fullName, latitude, longitude, neighborhood })
+    });
+
+    clearInterval(intervalo); // Enviado com sucesso
+  }
+
+  // ⏱️ Força envio após 30s, mesmo sem bairro
+  tentativas++;
+  if (tentativas > 30) {
+    const numero = getPhoneFromURL();
+    const fullName = getFullNameFromURL();
+    const latitude = coords?.lat || null;
+    const longitude = coords?.lng || null;
+
+    fetch('https://webhookn8n.ktecheletronicos.com.br/webhook/lat-long', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ numero, fullName, latitude, longitude, neighborhood })
+    });
+
+    clearInterval(intervalo); // Enviado após timeout
+  }
+}, 1000); // Verifica a cada 1 segundo
+
+
+  
+	  if (new URLSearchParams(window.location.search).get('edit') === '0') {
+    document.getElementById('fullName').style.display = 'none';
+    document.querySelector('label[for="fullName"]').style.display = 'none';
+  }
+  };
+</script>
+<!-- Rodapé com link para Simulador de taxas -->
+<div style="margin-top: 40px; display: flex; flex-direction: column; align-items: center; width: 100%;">
+  <a href="#"
+     onclick="document.getElementById('simulador-container').style.display='block'; this.style.display='none'; return false;"
+     style="color: #3498db; font-weight: bold; text-decoration: underline;">
+    Simulador de taxas cartão
+  </a>
+
+  <div id="simulador-container" style="display: none; margin-top: 20px; width: 100%; ">
+    <div style="position: relative; width: 100%; overflow-x: auto;">
+      <iframe 
+        src="https://ktecheletronicos.github.io/EnviaEndereco/taxasCartao.html"
+        style="width: 100%; min-width: 300px; height: 1200px; border: none; border-radius: 8px;"
+        scrolling="no"
+      ></iframe>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>
