@@ -325,8 +325,8 @@
 
     .radio-group {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
       margin-top: 12px;
     }
 
@@ -344,13 +344,18 @@
 
     .radio-label {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      padding: 16px;
+      justify-content: center;
+      padding: 12px 8px;
       border: 2px solid var(--border-color);
-      border-radius: 12px;
+      border-radius: 8px;
       background: white;
       transition: all 0.3s ease;
       font-weight: 500;
+      font-size: 13px;
+      text-align: center;
+      min-height: 70px;
     }
 
     .radio-option input:checked + .radio-label {
@@ -360,8 +365,9 @@
     }
 
     .radio-label .emoji {
-      font-size: 24px;
-      margin-right: 12px;
+      font-size: 20px;
+      margin-bottom: 4px;
+      display: block;
     }
 
     .form-row {
@@ -531,6 +537,24 @@
         gap: 8px;
       }
       
+      .radio-group {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      
+      .radio-label {
+        flex-direction: row;
+        justify-content: flex-start;
+        min-height: auto;
+        padding: 10px;
+      }
+      
+      .radio-label .emoji {
+        margin-right: 8px;
+        margin-bottom: 0;
+        font-size: 18px;
+      }
+      
       input, select {
         padding: 14px;
         font-size: 16px; /* Prevents zoom on iOS */
@@ -631,19 +655,22 @@
           <div class="radio-option">
             <input type="radio" name="tipoEndereco" value="CONDOMINIO" id="condominio">
             <label for="condominio" class="radio-label">
-              <span class="emoji">🏘️</span> Condomínio
+              <span class="emoji">🏘️</span>
+              <span>Condomínio</span>
             </label>
           </div>
           <div class="radio-option">
             <input type="radio" name="tipoEndereco" value="EMPRESA" id="empresa">
             <label for="empresa" class="radio-label">
-              <span class="emoji">🏢</span> Empresa
+              <span class="emoji">🏢</span>
+              <span>Empresa</span>
             </label>
           </div>
           <div class="radio-option">
             <input type="radio" name="tipoEndereco" value="CASA" id="casa">
             <label for="casa" class="radio-label">
-              <span class="emoji">🏠</span> Casa
+              <span class="emoji">🏠</span>
+              <span>Casa</span>
             </label>
           </div>
         </div>
@@ -774,38 +801,56 @@
     function initFullscreenMap() {
       if (!selectedLatLng) return;
       
+      // Remove mapa anterior se existir
       if (fullscreenMap) {
         fullscreenMap.remove();
+        fullscreenMap = null;
       }
       
-      fullscreenMap = L.map('fullscreenMap').setView([selectedLatLng.lat, selectedLatLng.lng], 18);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
-      }).addTo(fullscreenMap);
-
-      fullscreenMarker = L.marker([selectedLatLng.lat, selectedLatLng.lng], { 
-        draggable: true 
-      }).addTo(fullscreenMap);
-
-      fullscreenMarker.on('dragend', function (e) {
-        selectedLatLng = e.target.getLatLng();
-        fillAddressFromLatLng(selectedLatLng.lat, selectedLatLng.lng);
-        checkCoordinates();
-        
-        // Sincroniza com o mapa principal
-        if (marker) {
-          marker.setLatLng(selectedLatLng);
-          mainMap.setView(selectedLatLng, mainMap.getZoom());
-        }
-      });
-
-      // Força redimensionamento após um pequeno delay
+      // Aguarda o modal estar visível antes de criar o mapa
       setTimeout(() => {
-        fullscreenMap.invalidateSize();
-      }, 100);
+        try {
+          fullscreenMap = L.map('fullscreenMap').setView([selectedLatLng.lat, selectedLatLng.lng], 18);
+          
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+          }).addTo(fullscreenMap);
+
+          fullscreenMarker = L.marker([selectedLatLng.lat, selectedLatLng.lng], { 
+            draggable: true 
+          }).addTo(fullscreenMap);
+
+          fullscreenMarker.on('dragend', function (e) {
+            selectedLatLng = e.target.getLatLng();
+            fillAddressFromLatLng(selectedLatLng.lat, selectedLatLng.lng);
+            checkCoordinates();
+            
+            // Sincroniza com o mapa principal
+            if (marker) {
+              marker.setLatLng(selectedLatLng);
+              mainMap.setView(selectedLatLng, mainMap.getZoom());
+            }
+          });
+
+          // Força redimensionamento
+          setTimeout(() => {
+            if (fullscreenMap) {
+              fullscreenMap.invalidateSize();
+            }
+          }, 200);
+          
+        } catch (error) {
+          console.error('Erro ao criar mapa fullscreen:', error);
+        }
+      }, 300);
     }
 
     function openFullscreen() {
+      if (!selectedLatLng) {
+        alert('Aguarde o mapa carregar completamente antes de abrir em tela cheia.');
+        return;
+      }
+      
       const modal = document.getElementById('fullscreenModal');
       modal.classList.add('active');
       document.body.style.overflow = 'hidden';
@@ -969,6 +1014,17 @@
       document.querySelector('.form-container').style.display = 'block';
       document.getElementById('confirmLocationBtn').style.display = 'none';
       checkCoordinates();
+    });
+
+    // Fullscreen map event listeners
+    document.getElementById('openFullscreenBtn').addEventListener('click', openFullscreen);
+    document.getElementById('closeFullscreenBtn').addEventListener('click', closeFullscreen);
+    
+    // Close fullscreen with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('fullscreenModal').classList.contains('active')) {
+        closeFullscreen();
+      }
     });
 
     document.querySelectorAll('input[name="tipoEndereco"]').forEach(radio => {
