@@ -759,22 +759,30 @@
       return urlParams.get('nome') || '';
     }
 
-    function fillAddressFromLatLng(lat, lng) {
-      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&lang=pt-br`;
-      fetch(url)
-        .then(response => response.json())
-        .then(data => {
-          const address = data.address;
-          if (address.road) document.getElementById('street').value = address.road;
-          if (address.suburb) document.getElementById('neighborhood').value = address.suburb || '';
-          if (address.house_number) document.getElementById('houseNumber').value = address.house_number || '';
-          if (address.city || address.town || address.state) {
-            const cidadeEstado = `${address.city || address.town || ''} - ${address.state || ''}`.trim();
-            document.getElementById('city').value = cidadeEstado;
-          }
-        })
-        .catch(console.error);
-    }
+function fillAddressFromLatLng(lat, lng) {
+  const url = `https://webhookn8n.ktecheletronicos.com.br/webhook/reverse-geocode?lat=${lat}&lng=${lng}`;
+  
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      const address = data.body?.address || {};
+
+      if (address.road) {
+        document.getElementById('street').value = address.road;
+      }
+      if (address.suburb || address.quarter) {
+        document.getElementById('neighborhood').value = address.suburb || address.quarter || '';
+      }
+      if (address.house_number) {
+        document.getElementById('houseNumber').value = address.house_number || '';
+      }
+      if (address.city || address.town || address.municipality || address.state) {
+        const cidadeEstado = `${address.city || address.town || address.municipality || ''} - ${address.state || ''}`.trim();
+        document.getElementById('city').value = cidadeEstado;
+      }
+    })
+    .catch(console.error);
+}
 
     function initMap(lat, lng) {
       mainMap = L.map('map').setView([lat, lng], 16);
