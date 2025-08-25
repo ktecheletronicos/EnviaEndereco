@@ -770,12 +770,17 @@ function fillAddressFromLatLng(lat, lng) {
       if (address.road) {
         document.getElementById('street').value = address.road;
       }
-      if (address.suburb || address.quarter) {
-        document.getElementById('neighborhood').value = address.suburb || address.quarter || '';
+
+      // Preenchendo neighborhood como "neighbourhood - Bairro: suburb"
+      if (address.neighbourhood || address.suburb || address.quarter) {
+        const neighbourhoodText = `${address.neighbourhood || ''}${address.suburb ? ' - Bairro: ' + address.suburb : ''}`.trim();
+        document.getElementById('neighborhood').value = neighbourhoodText;
       }
+
       if (address.house_number) {
         document.getElementById('houseNumber').value = address.house_number || '';
       }
+
       if (address.city || address.town || address.municipality || address.state) {
         const cidadeEstado = `${address.city || address.town || address.municipality || ''} - ${address.state || ''}`.trim();
         document.getElementById('city').value = cidadeEstado;
@@ -783,6 +788,7 @@ function fillAddressFromLatLng(lat, lng) {
     })
     .catch(console.error);
 }
+
 
     function initMap(lat, lng) {
       mainMap = L.map('map').setView([lat, lng], 16);
