@@ -945,8 +945,13 @@
       const neighborhood = document.getElementById('neighborhood').value.trim();
       const city = document.getElementById('city').value.trim();
 
+      if (!tipoEndereco) {
+        showAlert('⚠️ Por favor, selecione o tipo de endereço (Casa, Empresa ou Condomínio).', 'error');
+        return;
+      }
+
       if (!formaPagamento) {
-        showAlert('Por favor, selecione a forma de pagamento preferida.', 'error');
+        showAlert('💳 Por favor, selecione a forma de pagamento preferida.', 'error');
         return;
       }
 
@@ -957,10 +962,9 @@
         !selectedLatLng ||
         !neighborhood ||
         !city ||
-        !tipoEndereco ||
         (tipoEndereco !== 'CASA' && empresaOuCondominio.length < 3)
       ) {
-        showAlert('Por favor, preencha o SOBRENOME, todos os campos corretamente e defina sua localização.', 'error');
+        showAlert('📝 Por favor, preencha o SOBRENOME, todos os campos corretamente e defina sua localização.', 'error');
         return;
       }
 
