@@ -761,26 +761,41 @@
 
 function fillAddressFromLatLng(lat, lng) {
   const url = `https://webhookn8n.ktecheletronicos.com.br/webhook/reverse-geocode?lat=${lat}&lng=${lng}`;
-  
+
   fetch(url)
     .then(response => response.json())
     .then(data => {
       const address = data.body?.address || {};
 
+      // Rua
       if (address.road) {
         document.getElementById('street').value = address.road;
       }
 
-      // Preenchendo neighborhood como "neighbourhood - Bairro: suburb"
-      if (address.neighbourhood || address.suburb || address.quarter) {
-        const neighbourhoodText = `${address.neighbourhood || ''}${address.suburb ? ' - Bairro: ' + address.suburb : ''}`.trim();
+      // Bairro / neighbourhood
+      if (address.suburb || address.quarter || address.neighbourhood) {
+        let neighbourhoodText = '';
+
+        if (address.neighbourhood) {
+          neighbourhoodText = address.neighbourhood;
+          if (address.suburb) {
+            neighbourhoodText += ' - Bairro: ' + address.suburb;
+          }
+        } else if (address.suburb) {
+          neighbourhoodText = address.suburb;
+        } else if (address.quarter) {
+          neighbourhoodText = address.quarter;
+        }
+
         document.getElementById('neighborhood').value = neighbourhoodText;
       }
 
+      // Número da casa
       if (address.house_number) {
-        document.getElementById('houseNumber').value = address.house_number || '';
+        document.getElementById('houseNumber').value = address.house_number;
       }
 
+      // Cidade + Estado
       if (address.city || address.town || address.municipality || address.state) {
         const cidadeEstado = `${address.city || address.town || address.municipality || ''} - ${address.state || ''}`.trim();
         document.getElementById('city').value = cidadeEstado;
@@ -788,6 +803,7 @@ function fillAddressFromLatLng(lat, lng) {
     })
     .catch(console.error);
 }
+
 
 
     function initMap(lat, lng) {
