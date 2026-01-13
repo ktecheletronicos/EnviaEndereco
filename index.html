@@ -711,6 +711,7 @@
       </div>
 
       <input type="hidden" id="phone">
+	  <input type="hidden" id="wpp">
       <input type="hidden" id="city" name="city">
 
       <button onclick="sendData()" class="submit-btn">
@@ -1008,6 +1009,7 @@ function fillAddressFromLatLng(lat, lng) {
         button.innerHTML = '🚀 Enviar dados e aguardar confirmação';
       }, 60000);
 
+	const wpp = document.getElementById('wpp').value.trim();
       const payload = {
         fullName,
         tipoEndereco,
@@ -1017,6 +1019,7 @@ function fillAddressFromLatLng(lat, lng) {
         neighborhood,
         city,
         phone,
+		wpp,  // <- ADICIONADO AQUI
         formaPagamento,
         latitude: selectedLatLng.lat,
         longitude: selectedLatLng.lng
@@ -1083,6 +1086,7 @@ function fillAddressFromLatLng(lat, lng) {
       getCurrentLocation();
       document.getElementById('phone').value = getPhoneFromURL();
       document.getElementById('fullName').value = getFullNameFromURL();
+	  document.getElementById('wpp').value = getWppFromURL();
       
       // Auto-send location data when available
       let tentativas = 0;
