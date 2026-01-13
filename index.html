@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <link rel="icon" type="image/png" href="https://ktecheletronicos.github.io/EnviaEndereco/favicon-32x32.png" />
-  <title>Confirmação de Endereço para Entrega da KTech!</title>
+  <title>Confirmação de Endereço para Entrega da KTech.</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
@@ -760,7 +760,10 @@
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('nome') || '';
     }
-
+	function getWppFromURL() {
+		const urlParams = new URLSearchParams(window.location.search);
+		return urlParams.get('wpp') || '';
+	}
 function fillAddressFromLatLng(lat, lng) {
   const url = `https://webhookn8n.ktecheletronicos.com.br/webhook/reverse-geocode?lat=${lat}&lng=${lng}`;
 
